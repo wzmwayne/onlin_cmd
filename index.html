@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>命令行模拟器</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #333;
+            font-family: monospace;
+            overflow: hidden;
+        }
+        .container {
+            width: 80%;
+            max-width: 800px;
+            background-color: #222;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
+        input[type="text"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            color: #fff;
+            background-color: #ccc;
+            border: none;
+            border-radius: 4px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            color: #fff;
+            background-color: #222;
+            border: none;
+            resize: none;
+            overflow-y: auto;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #ccc;
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #aaa;
+        }
+        label {
+            color: #fff;
+            display: block;
+            margin-top: 10px;
+        }
+        input[type="checkbox"] {
+            accent-color: #ccc;
+        }
+        .warning-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: red;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            z-index: 2;
+        }
+        .control-warning {
+            background-color: yellow;
+            color: black;
+            padding: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="warning-overlay" id="warningOverlay">
+        <p><strong>安全警告：</strong> 此页面允许您执行系统命令，请谨慎操作。</p>
+        <div class="control-warning" id="controlWarning">
+            您的浏览器不支持ActiveX控件。<br>
+            请使用Internet Explorer浏览器或在Microsoft Edge中开启IE模式，操作请查看：<br>
+            <a href='https://jingyan.baidu.com/article/e73e26c0b0236c65adb6a7d3.html' target='_blank'>如何开启Edge的IE模式</a><br>
+            和<br>
+            <a href='https://jingyan.baidu.com/article/647f0115f4294c7f2048a842.html' target='_blank'>如何开启ActiveX控件</a>
+        </div>
+    </div>
+
+    <div class="container" id="commandContainer" style="display: none;">
+        <input type="text" id="commandInput" placeholder="输入命令...">
+        <button onclick="executeCommand()">执行</button>
+        <textarea id="outputArea" readonly></textarea>
+    </div>
+
+    <object id="wsh" classid="clsid:F935DC22-1CF0-11D0-ADB9-00C04FD58A0B"></object>
+
+    <script>
+        function checkActiveXSupport() {
+            try {
+                new ActiveXObject("WScript.Shell");
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        window.onload = function() {
+            if (!checkActiveXSupport()) {
+                document.getElementById('controlWarning').style.display = 'block';
+                document.getElementById('commandContainer').style.display = 'none';
+            } else {
+                document.getElementById('warningOverlay').style.display = 'none';
+                document.getElementById('commandContainer').style.display = 'block';
+            }
+        };
+
+        function executeCommand() {
+            var commandInput = document.getElementById('commandInput');
+            var outputArea = document.getElementById('outputArea');
+
+            if (checkActiveXSupport()) {
+                try {
+                    var WshShell = new ActiveXObject("WScript.Shell");
+                    var oExec = WshShell.Exec(commandInput.value);
+                    var stdout = oExec.StdOut.ReadAll();
+                    var stderr = oExec.StdErr.ReadAll();
+
+                    outputArea.value += "执行命令: " + commandInput.value + "\n";
+                    if (stdout) {
+                        outputArea.value += "标准输出:\n" + stdout + "\n";
+                    }
+                    if (stderr) {
+                        outputArea.value += "标准错误:\n" + stderr + "\n";
+                    }
+                } catch (e) {
+                    outputArea.value += "执行命令失败: " + commandInput.value + "\n";
+                    outputArea.value += e.message + "\n";
+                }
+            } else {
+                outputArea.value += "您的浏览器不支持ActiveX控件，无法执行命令。\n";
+            }
+
+            // 自动滚动到底部
+            outputArea.scrollTop = outputArea.scrollHeight;
+        }
+    </script>
+</body>
+</html>
+
+
+
